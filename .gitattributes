@@ -1,0 +1,5 @@
+*.MOV filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.MP4 filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+Dessert[[:space:]]Platter[[:space:]]4.JPEG filter=lfs diff=lfs merge=lfs -text

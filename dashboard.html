@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="styles.css" rel="stylesheet">
+
+<script>
+(function () {
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        window.location.href = "admin.html";
+    }
+
+})();
+</script>
+
+</head>
+
+<body class="text-white flex">
+
+<!-- SIDEBAR -->
+<div class="w-64 bg-gray-900 min-h-screen p-5">
+
+    <h2 class="text-sky-400 text-xl font-bold mb-6">
+        Admin Panel
+    </h2>
+
+    <ul class="space-y-4">
+
+        <li>
+            <a href="#" class="text-sky-400">
+                Messages
+            </a>
+        </li>
+
+        <li>
+            <a href="index.html">
+                Website
+            </a>
+        </li>
+
+        <li>
+            <button onclick="logout()"
+                    class="text-red-400">
+                Logout
+            </button>
+        </li>
+
+    </ul>
+
+</div>
+
+
+<!-- MAIN CONTENT -->
+<div class="flex-1 p-8">
+
+    <h1 class="text-3xl font-bold mb-6">
+        Messages
+    </h1>
+
+    <button
+        onclick="loadMessages()"
+        class="mb-6 bg-sky-400 text-black px-4 py-2 rounded hover:scale-105 transition">
+
+        Refresh
+
+    </button>
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full border border-gray-700">
+
+            <thead>
+
+                <tr class="bg-gray-800">
+
+                    <th class="p-3">Name</th>
+                    <th class="p-3">Email</th>
+                    <th class="p-3">Subject</th>
+                    <th class="p-3">Message</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Date</th>
+                    <th class="p-3">Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="messages">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function logout() {
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+
+    window.location.href = "admin.html";
+
+}
+
+
+async function loadMessages() {
+
+    const token = localStorage.getItem("token");
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5055/api/admin/messages",
+            {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            }
+        );
+
+        if (!response.ok) {
+
+            alert("Not authorized");
+
+            return;
+        }
+
+        const data = await response.json();
+
+        const table = document.getElementById("messages");
+
+        table.innerHTML = "";
+
+        data.forEach(msg => {
+
+            table.innerHTML += `
+
+            <tr class="border-t border-gray-700 hover:bg-gray-900">
+
+                <td class="p-3">
+                    ${msg.name}
+                </td>
+
+                <td class="p-3">
+                    ${msg.email}
+                </td>
+
+                <td class="p-3">
+                    ${msg.subject}
+                </td>
+
+                <td class="p-3 max-w-sm">
+                    ${msg.message}
+                </td>
+
+                <td class="p-3 text-yellow-400">
+                    New
+                </td>
+
+                <td class="p-3">
+                    ${new Date(
+                        msg.dateSent
+                    ).toLocaleString()}
+                </td>
+
+                <td class="p-3">
+
+                    <button
+                        onclick="deleteMessage(${msg.id})"
+                        class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">
+
+                        Delete
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+            `;
+
+        });
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert("Error loading messages");
+
+    }
+
+}
+
+
+async function deleteMessage(id){
+
+    const confirmed = confirm(
+        "Delete this message permanently?"
+    );
+
+    if(!confirmed)
+        return;
+
+    const token = localStorage.getItem("token");
+
+    try{
+
+        const response = await fetch(
+            `http://localhost:5055/api/admin/messages/${id}`,
+            {
+                method:"DELETE",
+                headers:{
+                    "Authorization":"Bearer " + token
+                }
+            }
+        );
+
+        if(response.ok){
+
+            alert("Message deleted");
+
+            loadMessages();
+
+        }
+
+        else{
+
+            alert("Delete failed");
+
+        }
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert("Server error");
+
+    }
+
+}
+
+
+loadMessages();
+
+</script>
+<script>
+    window.onload = function () {
+        localStorage.setItem("messageNotification", "0");
+    };
+</script>
+
+<script src="social-footer.js"></script>
+<script src="reveal.js"></script>
+</body>
+</html>

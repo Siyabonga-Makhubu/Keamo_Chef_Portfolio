@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="styles.css" rel="stylesheet">
+  <style>
+  .bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+
+  .video-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: -1;
+  }
+</style>
+</head>
+
+<body class="text-white min-h-screen relative">
+
+  <!-- NAVBAR -->
+  <nav class="flex justify-between items-center p-4 border-b border-gray-800">
+    
+    <h2 class="text-sky-400 font-bold text-xl">
+      Keamogetswe Moagi
+    </h2>
+    <ul class="nav-links hidden md:flex items-center gap-8">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="About.html">About</a></li>
+        <li><a href="Skills.html">Skills</a></li>
+        <li><a href="Artisinal_Creations.html">Artisinal Creations</a></li>
+        <li><a href="education.html">Qualifications</a></li>
+        <li><a href="experience.html">Experience</a></li>
+        <li><a href="contact.html">Contact</a></li>
+
+   </ul>
+
+  </nav>
+
+  <!-- BACKGROUND VIDEO -->
+  <video autoplay muted loop playsinline class="bg-video">
+    <source src="Kitchen trailer elegant.MOV" type="video/mp4">
+  </video>
+
+    <!-- DARK OVERLAY -->
+  <div class="video-overlay"></div>
+
+  <!-- LOGIN CONTAINER -->
+  <div class="flex items-center justify-center h-[80vh]">
+
+    <div class="bg-gray-900 p-8 rounded-xl w-96">
+
+      <h2 class="text-2xl font-bold mb-6 text-center">
+        Admin Login
+      </h2>
+
+      <input id="username"
+             class="w-full p-2 mb-4 text-black rounded"
+             placeholder="Username" />
+
+      <input id="password"
+             type="password"
+             class="w-full p-2 mb-4 text-black rounded"
+             placeholder="Password" />
+
+      <button onclick="login()"
+              class="w-full bg-sky-400 text-black p-2 rounded hover:scale-105 transition">
+        Login
+      </button>
+
+      <p id="error" class="text-red-400 mt-4 text-center"></p>
+
+    </div>
+
+  </div>
+
+<script>
+    async function login() {
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        try {
+
+            const response = await fetch("http://localhost:5055/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                document.getElementById("error").innerText = "Invalid login";
+                return;
+            }
+
+            const data = await response.json();
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("role", data.role);
+
+            window.location.href = "dashboard.html";
+
+        } catch (err) {
+            console.log(err);
+            document.getElementById("error").innerText = "Server error";
+        }
+    }
+</script>
+
+<script src="script.js"></script>
+<script src="social-footer.js"></script>
+<script src="reveal.js"></script>
+
+</body>
+</html>

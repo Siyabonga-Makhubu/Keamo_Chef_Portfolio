@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register | Chef Portfolio</title>
+
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body>
+
+<nav class="navbar">
+  <h2>Keamogetswe Moagi</h2>
+</nav>
+
+<main class="container">
+
+  <!-- REGISTER -->
+  <section id="register-section">
+    <h1>Register</h1>
+
+    <form id="register-form">
+      <input id="reg-name" type="text" placeholder="Full Name" required />
+      <input id="reg-email" type="email" placeholder="Email" required />
+      <input id="reg-contact" type="tel" placeholder="Contact Number" required />
+
+      <button type="submit">Register</button>
+
+      <p id="error-msg" class="error hidden"></p>
+    </form>
+  </section>
+
+  <!-- SUCCESS -->
+  <section id="success-section" class="hidden">
+    <i data-lucide="check-circle"></i>
+    <h1>Registration Successful!</h1>
+    <p>Your details have been saved.</p>
+
+    <button onclick="goHome()">Go to Home</button>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+<script src="social-footer.js"></script>
+<script src="reveal.js"></script>
+</body>
+</html>
