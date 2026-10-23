@@ -47,44 +47,71 @@
 
         <div class="flex flex-wrap gap-8 justify-center">
 
-            <form id="contact-form" class="glass-card p-8 w-80 flex flex-col gap-4">
+            <form id="contact-form" class="glass-card p-8 w-full max-w-md flex flex-col gap-4" novalidate>
 
+                <label class="sr-only" for="name">Full name</label>
                 <input
-                name="name"
-                id="name"
-                class="canva-input"
-                type="text"
-                required
-                placeholder="Your Name">
+                    name="name"
+                    id="name"
+                    class="canva-input"
+                    type="text"
+                    required
+                    autocomplete="name"
+                    aria-label="Full name"
+                    aria-describedby="name-error"
+                    placeholder="Your Name">
+                <span id="name-error" class="field-error" aria-live="polite"></span>
 
+                <label class="sr-only" for="phone">Customer phone number</label>
                 <input
-                name="email"
-                id="email"
-                class="canva-input"
-                type="email"
-                required
-                placeholder="Your Email">
+                    name="phone"
+                    id="phone"
+                    class="canva-input"
+                    type="tel"
+                    required
+                    autocomplete="tel"
+                    inputmode="tel"
+                    aria-label="Customer phone number"
+                    aria-describedby="phone-error"
+                    placeholder="Your Phone Number">
+                <span id="phone-error" class="field-error" aria-live="polite"></span>
 
-                <input
-                name="subject"
-                id="subject"
-                class="canva-input"
-                type="text"
-                required
-                placeholder="Subject">
+                <label class="sr-only" for="enquiry-type">Type of enquiry</label>
+                <select
+                    id="enquiry-type"
+                    name="enquiryType"
+                    class="canva-input"
+                    required
+                    aria-label="Type of enquiry"
+                    aria-describedby="enquiry-type-error">
+                    <option value="">Select an enquiry type</option>
+                    <option value="Catering enquiry">Catering enquiry</option>
+                    <option value="Private dining enquiry">Private dining enquiry</option>
+                    <option value="Event booking enquiry">Event booking enquiry</option>
+                    <option value="General enquiry">General enquiry</option>
+                </select>
+                <span id="enquiry-type-error" class="field-error" aria-live="polite"></span>
 
+                <label class="sr-only" for="message">Message</label>
                 <textarea
-                name="message"
-                id="message"
-                class="canva-input"
-                rows="4"
-                required
-                placeholder="Please tell me more about your vacancy, event, collaboration or enquiry."></textarea>
+                    name="message"
+                    id="message"
+                    class="canva-input"
+                    rows="4"
+                    required
+                    aria-label="Message"
+                    aria-describedby="message-error"
+                    placeholder="Please tell me more about your event or enquiry."></textarea>
+                <span id="message-error" class="field-error" aria-live="polite"></span>
+
+                <p class="text-sm text-slate-300">
+                    WhatsApp will open with your message ready to review. You must press Send in WhatsApp.
+                </p>
 
                 <button
-                type="submit"
-                class="w-full py-3 rounded-lg font-semibold bg-sky-400 text-black hover:scale-105 transition">
-                Send Message
+                    type="submit"
+                    class="whatsapp-submit w-full py-3 rounded-lg font-semibold bg-sky-400 text-black">
+                    Send via WhatsApp
                 </button>
 
             </form>
@@ -97,9 +124,10 @@
 
         </div>
 
-        <div id="success-message"
-             class="hidden text-green-400 text-center mt-6 font-semibold">
-             Message sent successfully!
+        <div id="whatsapp-status"
+             class="hidden text-center mt-6 font-semibold"
+             role="status"
+             aria-live="polite">
         </div>
 
     </div>
@@ -108,144 +136,9 @@
   <footer class="py-8 text-center border-t border-gray-800">
    <p data-template-id="footer-text" class="canva-text text-sm" style="color: rgb(107, 114, 128); font-weight: 400; font-style: normal; font-size: 16px;">© 2026 Chef Keamogetswe Moagi. All rights reserved.</p>
   </footer>
-  <script>
-        document.addEventListener("DOMContentLoaded", () => {
-
-            const user = JSON.parse(localStorage.getItem("user"));
-
-            if (!user || !user.isRegistered) {
-                alert("Please register first");
-                window.location.href = "register.html";
-            }
-
-        });
-
-        document.getElementById("contact-form").addEventListener("submit", async function(e) {
-            e.preventDefault();
-            const contact = {
-                name: document.getElementById("name").value,
-                email: document.getElementById("email").value,
-                subject: document.getElementById("subject").value,
-                message: document.getElementById("message").value
-            };
-
-            try {
-
-                const response = await fetch(
-                    "http://localhost:5055/api/contact",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(contact)
-                    }
-                );
-
-                if (response.ok) {
-
-                    // SUCCESS MESSAGE
-                    document
-                    .getElementById("success-message")
-                    .classList.remove("hidden");
-
-                    // NOTIFICATION ELEMENTS
-                    const bell =
-                        document.getElementById("notification-bell");
-
-                    const count =
-                        document.getElementById("notification-count");
-
-                    // GET CURRENT COUNT
-                    let currentCount =
-                        parseInt(
-                            localStorage.getItem("messageNotification")
-                        ) || 0;
-
-                    // INCREMENT COUNT
-                    currentCount++;
-
-                    // SAVE UPDATED COUNT
-                    localStorage.setItem(
-                        "messageNotification",
-                        currentCount
-                    );
-
-                    // SHOW BELL
-                    if (bell) {
-                        bell.classList.remove("hidden");
-                    }
-
-                    // UPDATE NUMBER
-                    if (count) {
-                        count.textContent = currentCount;
-                    }
-
-                    // RESET FORM
-                    document
-                    .getElementById("contact-form")
-                    .reset();
-
-                    // RELOAD LUCIDE ICONS
-                    lucide.createIcons();
-
-                }
-                else {
-
-                    alert("Failed to send message");
-
-                }
-
-            }
-
-            catch (error) {
-
-                console.error(error);
-
-                alert("Server error. Please try again later.");
-
-            }
-
-        });
-    </script>
+  <script src="contact-config.js"></script>
+  <script src="contact-form.js"></script>
     <script src="script.js"></script>
-    <script>
-
-        document.addEventListener("DOMContentLoaded", () => {
-
-            // NOTIFICATION ELEMENTS
-            const bell =
-                document.getElementById("notification-bell");
-
-            const count =
-                document.getElementById("notification-count");
-
-            // GET SAVED COUNT
-            let notificationCount =
-                parseInt(
-                    localStorage.getItem("messageNotification")
-                ) || 0;
-
-            // SHOW/HIDE BELL
-            if (notificationCount > 0) {
-
-                bell.classList.remove("hidden");
-
-                count.textContent = notificationCount;
-
-            }
-            else {
-
-                bell.classList.add("hidden");
-
-            }
-
-            // RELOAD ICONS
-            lucide.createIcons();
-
-        });
-            
-    </script>
     
 <script src="social-footer.js"></script>
 <script src="reveal.js"></script>

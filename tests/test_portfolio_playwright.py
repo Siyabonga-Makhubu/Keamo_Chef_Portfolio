@@ -1,4 +1,5 @@
 import json
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -221,36 +222,146 @@ def test_registration_success_with_mocked_api(
     assert playwright_page.evaluate("localStorage.getItem('user')") is not None
 
 
-def test_contact_form_success_with_mocked_api(
+def _mock_whatsapp_window(page: object) -> None:
+    page.add_init_script(
+        "window.CHEF_WHATSAPP_NUMBER = '27820000000';"
+        "window.__openedUrls = [];"
+        "window.open = (url, target, features) => {"
+        "window.__openedUrls.push({url, target, features}); return {};"
+        "};"
+    )
+
+
+def _fill_contact_form(page: object) -> None:
+    page.locator("#name").fill("Zoë & Co")
+    page.locator("#phone").fill("+27 (82) 123-4567")
+    page.locator("#enquiry-type").select_option(label="Catering enquiry")
+    page.locator("#message").fill("Hello, chef!\nCanapé & crème brûlée.")
+
+
+@pytest.mark.parametrize("page_name", ["index.html", "contact.html"])
+def test_contact_form_opens_prefilled_whatsapp_message(
+    playwright_page: object, base_url: str, page_name: str
+) -> None:
+    _mock_whatsapp_window(playwright_page)
+    playwright_page.goto(f"{base_url}/{page_name}", wait_until="domcontentloaded")
+    _fill_contact_form(playwright_page)
+
+    playwright_page.get_by_role(
+        "button", name="Send via WhatsApp"
+    ).click()
+
+    opened = playwright_page.evaluate("window.__openedUrls[0]")
+    parsed = urlsplit(opened["url"])
+    message = parse_qs(parsed.query)["text"][0]
+
+    assert parsed.scheme == "https"
+    assert parsed.netloc == "wa.me"
+    assert parsed.path == "/27820000000"
+    assert message == (
+        "Hello Chef,\n\n"
+        "I would like to enquire about your services.\n\n"
+        "Customer Name: Zoë & Co\n"
+        "Customer Phone: +27821234567\n"
+        "Enquiry Type: Catering enquiry\n\n"
+        "Message:\n"
+        "Hello, chef!\nCanapé & crème brûlée.\n\n"
+        "Thank you."
+    )
+    assert "%C3%AB" in opened["url"]
+    assert "%26" in opened["url"]
+    assert "%0A" in opened["url"]
+    assert opened["target"] == "_blank"
+    assert "noopener" in opened["features"]
+    assert "press Send" in playwright_page.locator("#whatsapp-status").inner_text()
+    assert "successfully" not in playwright_page.locator("#whatsapp-status").inner_text()
+
+
+def test_contact_form_shows_errors_for_missing_required_fields(
     playwright_page: object, base_url: str
 ) -> None:
-    playwright_page.add_init_script(
-        "localStorage.setItem('user', JSON.stringify({isRegistered: true}));"
-    )
-    def send_contact(route: object) -> None:
-        cors_headers = {
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Origin": "*",
-        }
-        if route.request.method == "OPTIONS":
-            route.fulfill(status=204, headers=cors_headers)
-        else:
-            route.fulfill(
-                status=200,
-                headers={"Access-Control-Allow-Origin": "*"},
-                body='{"message":"sent"}',
-            )
-
-    playwright_page.route("http://localhost:5055/api/contact", send_contact)
+    _mock_whatsapp_window(playwright_page)
     playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
-    playwright_page.locator("#name").fill("Test Chef")
-    playwright_page.locator("#email").fill("chef@example.test")
-    playwright_page.locator("#subject").fill("Catering request")
-    playwright_page.locator("#message").fill("Please contact me.")
-    playwright_page.get_by_role("button", name="Send Message").click()
+    playwright_page.get_by_role("button", name="Send via WhatsApp").click()
 
-    playwright_page.locator("#success-message").wait_for(state="visible")
+    for field_id in ("name", "phone", "enquiry-type", "message"):
+        assert playwright_page.locator(f"#{field_id}").get_attribute(
+            "aria-invalid"
+        ) == "true"
+        assert playwright_page.locator(f"#{field_id}-error").inner_text()
+    assert playwright_page.evaluate("window.__openedUrls") == []
+
+
+def test_contact_form_rejects_invalid_phone_number(
+    playwright_page: object, base_url: str
+) -> None:
+    _mock_whatsapp_window(playwright_page)
+    playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
+    playwright_page.locator("#name").fill("Test Customer")
+    playwright_page.locator("#phone").fill("not-a-phone")
+    playwright_page.locator("#enquiry-type").select_option(
+        label="General enquiry"
+    )
+    playwright_page.locator("#message").fill("Please get in touch.")
+    playwright_page.get_by_role("button", name="Send via WhatsApp").click()
+
+    assert "valid phone number" in playwright_page.locator(
+        "#phone-error"
+    ).inner_text()
+    assert playwright_page.evaluate("window.__openedUrls") == []
+
+
+def test_contact_form_requires_chef_whatsapp_configuration(
+    playwright_page: object, base_url: str
+) -> None:
+    playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
+    _fill_contact_form(playwright_page)
+    playwright_page.get_by_role("button", name="Send via WhatsApp").click()
+
+    assert "not configured" in playwright_page.locator(
+        "#whatsapp-status"
+    ).inner_text()
+
+
+def test_contact_form_prevents_duplicate_whatsapp_actions(
+    playwright_page: object, base_url: str
+) -> None:
+    _mock_whatsapp_window(playwright_page)
+    playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
+    _fill_contact_form(playwright_page)
+    button = playwright_page.get_by_role("button", name="Send via WhatsApp")
+    button.click()
+    playwright_page.locator("#contact-form").dispatch_event("submit")
+    playwright_page.locator("#contact-form").dispatch_event("submit")
+
+    assert playwright_page.evaluate("window.__openedUrls.length") == 1
+    assert button.is_disabled()
+
+
+def test_contact_form_fits_mobile_viewport(
+    playwright_page: object, base_url: str
+) -> None:
+    playwright_page.set_viewport_size({"width": 320, "height": 640})
+    playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
+
+    dimensions = playwright_page.evaluate(
+        """() => {
+          const form = document.querySelector("#contact-form");
+          const rect = form.getBoundingClientRect();
+          return {
+            left: rect.left,
+            right: rect.right,
+            viewportWidth: document.documentElement.clientWidth,
+            scrollWidth: document.documentElement.scrollWidth,
+          };
+        }"""
+    )
+    assert dimensions["left"] >= 0
+    assert dimensions["right"] <= dimensions["viewportWidth"]
+    assert dimensions["scrollWidth"] <= dimensions["viewportWidth"]
+    assert playwright_page.get_by_role(
+        "button", name="Send via WhatsApp"
+    ).is_visible()
 
 
 def test_foodtography_images_open_in_lightbox(

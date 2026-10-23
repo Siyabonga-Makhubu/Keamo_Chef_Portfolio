@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
   <script src="/_sdk/resizing_sdk.js" type="text/javascript"></script>
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
  </head>
  <body data-template-id="__page-root" class="min-h-screen text-white"><!-- Navbar -->
   <nav class="navbar">
@@ -824,40 +823,71 @@
 
         <div class="flex flex-wrap gap-8 justify-center">
 
-            <form id="contact-form" class="glass-card p-8 w-80 flex flex-col gap-4">
+            <form id="contact-form" class="glass-card p-8 w-full max-w-md flex flex-col gap-4" novalidate>
 
+                <label class="sr-only" for="name">Full name</label>
                 <input 
                     id="name"
+                    name="name"
                     class="canva-input"
                     type="text"
                     required
+                    autocomplete="name"
+                    aria-label="Full name"
+                    aria-describedby="name-error"
                     placeholder="Your Name">
+                <span id="name-error" class="field-error" aria-live="polite"></span>
 
+                <label class="sr-only" for="phone">Customer phone number</label>
                 <input 
-                    id="email"
+                    id="phone"
+                    name="phone"
                     class="canva-input"
-                    type="email"
+                    type="tel"
                     required
-                    placeholder="Your Email">
+                    autocomplete="tel"
+                    inputmode="tel"
+                    aria-label="Customer phone number"
+                    aria-describedby="phone-error"
+                    placeholder="Your Phone Number">
+                <span id="phone-error" class="field-error" aria-live="polite"></span>
 
-                <input 
-                    id="subject"
+                <label class="sr-only" for="enquiry-type">Type of enquiry</label>
+                <select
+                    id="enquiry-type"
+                    name="enquiryType"
                     class="canva-input"
-                    type="text"
                     required
-                    placeholder="Subject">
+                    aria-label="Type of enquiry"
+                    aria-describedby="enquiry-type-error">
+                    <option value="">Select an enquiry type</option>
+                    <option value="Catering enquiry">Catering enquiry</option>
+                    <option value="Private dining enquiry">Private dining enquiry</option>
+                    <option value="Event booking enquiry">Event booking enquiry</option>
+                    <option value="General enquiry">General enquiry</option>
+                </select>
+                <span id="enquiry-type-error" class="field-error" aria-live="polite"></span>
 
+                <label class="sr-only" for="message">Message</label>
                 <textarea 
                     id="message"
+                    name="message"
                     class="canva-input"
                     rows="4"
-                    placeholder="Please tell me more about your vacancy, event, collaboration or enquiry."
+                    aria-label="Message"
+                    aria-describedby="message-error"
+                    placeholder="Please tell me more about your event or enquiry."
                     required></textarea>
+                <span id="message-error" class="field-error" aria-live="polite"></span>
+
+                <p class="text-sm text-slate-300">
+                    WhatsApp will open with your message ready to review. You must press Send in WhatsApp.
+                </p>
 
                 <button
                     type="submit"
-                    class="w-full py-3 rounded-lg font-semibold bg-sky-400 text-black hover:scale-105 transition">
-                    Send Message
+                    class="whatsapp-submit w-full py-3 rounded-lg font-semibold bg-sky-400 text-black">
+                    Send via WhatsApp
                 </button>
 
             </form>
@@ -870,9 +900,10 @@
 
         </div>
 
-        <div id="success-message"
-             class="hidden text-green-400 text-center mt-6 font-semibold">
-             Message sent successfully!
+        <div id="whatsapp-status"
+             class="hidden text-center mt-6 font-semibold"
+             role="status"
+             aria-live="polite">
         </div>
 
     </div>
@@ -885,8 +916,6 @@
   </footer>
   <script src="/_sdk/editing_sdk.js"></script>
   <script src="script.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
   <!-- Feedback Slide script -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -995,97 +1024,8 @@
             
     </script>
 
-    <!-- Contact Form submition script -->
-    <script>
-        document
-        .getElementById("contact-form")
-        .addEventListener("submit", async function(e) {
-
-            e.preventDefault();
-
-            const contact = {
-                name: document.getElementById("name").value,
-                email: document.getElementById("email").value,
-                subject: document.getElementById("subject").value,
-                message: document.getElementById("message").value
-            };
-
-            try {
-
-                const response = await fetch(
-                    "http://localhost:5055/api/contact",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(contact)
-                    }
-                );
-
-                if (response.ok) {
-
-                    // SUCCESS MESSAGE
-                    document
-                    .getElementById("success-message")
-                    .classList.remove("hidden");
-
-                    // RESET FORM
-                    document
-                    .getElementById("contact-form")
-                    .reset();
-
-                    // NOTIFICATION ELEMENTS
-                    const bell =
-                        document.getElementById("notification-bell");
-
-                    const count =
-                        document.getElementById("notification-count");
-
-                    // GET CURRENT COUNT
-                    let currentCount =
-                        parseInt(
-                            localStorage.getItem("messageNotification")
-                        ) || 0;
-
-                    // INCREMENT
-                    currentCount++;
-
-                    // SAVE
-                    localStorage.setItem(
-                        "messageNotification",
-                        currentCount
-                    );
-
-                    // SHOW BELL
-                    bell.classList.remove("hidden");
-
-                    // UPDATE NUMBER
-                    count.textContent = currentCount;
-
-                    // RELOAD ICONS
-                    lucide.createIcons();
-
-                }
-
-                else {
-
-                    alert("Failed to send message");
-
-                }
-
-            }
-
-            catch (error) {
-
-                console.error(error);
-
-                alert("Server error. Please try again later.");
-
-            }
-
-        });
-    </script>
+    <script src="contact-config.js"></script>
+    <script src="contact-form.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
 

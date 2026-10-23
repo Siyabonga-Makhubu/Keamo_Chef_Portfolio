@@ -138,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initReadMore();
     initLightbox();
     initSlider();
-    initContactForm();
     initNotifications();
     initProfile();
     initRegisterForm();
@@ -286,52 +285,6 @@ function initSlider() {
             index = i;
             show(index);
         });
-    });
-}
-
-// =========================
-// CONTACT FORM (SINGLE CLEAN VERSION)
-// =========================
-function initContactForm() {
-    const form = document.getElementById("contact-form");
-    const success = document.getElementById("success-message");
-
-    if (!form) return;
-
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const payload = {
-            name: document.getElementById("name")?.value,
-            email: document.getElementById("email")?.value,
-            subject: document.getElementById("subject")?.value,
-            message: document.getElementById("message")?.value
-        };
-
-        try {
-            const res = await fetch(`${API_BASE}/contact`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) throw new Error();
-
-            if (success) success.classList.remove("hidden");
-
-            form.reset();
-
-            let count =
-                parseInt(localStorage.getItem("messageNotification")) || 0;
-
-            localStorage.setItem("messageNotification", count + 1);
-
-            initNotifications();
-
-        } catch (err) {
-            console.error(err);
-            alert("Failed to send message");
-        }
     });
 }
 
