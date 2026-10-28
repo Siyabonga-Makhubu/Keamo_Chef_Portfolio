@@ -314,6 +314,7 @@ def test_contact_form_rejects_invalid_phone_number(
 def test_contact_form_requires_chef_whatsapp_configuration(
     playwright_page: object, base_url: str
 ) -> None:
+    playwright_page.add_init_script("window.CHEF_WHATSAPP_NUMBER = 'invalid';")
     playwright_page.goto(f"{base_url}/contact.html", wait_until="domcontentloaded")
     _fill_contact_form(playwright_page)
     playwright_page.get_by_role("button", name="Send via WhatsApp").click()

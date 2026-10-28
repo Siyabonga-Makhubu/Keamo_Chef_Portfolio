@@ -28,6 +28,14 @@ Open `http://localhost:8000/index.html` or
 **Send via WhatsApp**; verify that WhatsApp opens with the prefilled enquiry.
 Review it and press **Send** in WhatsApp to send it.
 
+## Deploy to GitHub Pages
+
+In the repository settings, open **Pages** and set **Build and deployment →
+Source** to **GitHub Actions**. The `Deploy portfolio to GitHub Pages` workflow
+then deploys on pushes to `main`; it can also be run manually from the
+repository's **Actions** tab. The project site URL will be
+`https://siyabonga-makhubu.github.io/Keamo_Chef_Portfolio/`.
+
 ## Setup
 
 From the portfolio workspace root, install the Python dependencies and the

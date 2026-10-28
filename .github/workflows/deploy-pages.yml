@@ -1,0 +1,72 @@
+name: Deploy portfolio to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Download LFS media used by portfolio pages
+        run: >-
+          git lfs pull
+          --include="Altitude Beach Lunch - About Me.MOV,Altitude Beach Lunch 2.MOV,Bruleeing Dessert.MOV,Kitchen trailer elegant.MOV"
+
+      - name: Prepare static site
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+
+          site = Path("_site")
+          site.mkdir()
+          public_extensions = {".html", ".js", ".css", ".jpg", ".jpeg", ".png"}
+
+          for source in Path(".").iterdir():
+              if source.is_file() and source.suffix.lower() in public_extensions:
+                  shutil.copy2(source, site / source.name)
+
+          videos = (
+              "Altitude Beach Lunch - About Me.MOV",
+              "Altitude Beach Lunch 2.MOV",
+              "Bruleeing Dessert.MOV",
+              "Kitchen trailer elegant.MOV",
+          )
+          for name in videos:
+              source = Path(name)
+              if not source.is_file():
+                  raise FileNotFoundError(f"Required portfolio video is missing: {name}")
+              shutil.copy2(source, site / name)
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
